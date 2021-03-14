@@ -2,8 +2,13 @@
 
 ```
 python3 .\exchange-exp.py
-使用方式: python PoC.py <target> <email>
-使用方式: python PoC.py mail.exchange.cn administrator@exchange.cn
+
+--------------------------------------------------------------------------------
+|                                                                                |
+|  Usage: python .\exchange-exp.py <target> <email>
+|  Usage: python .\exchange-exp.py mail.exchange.cn administrator@exchange.cn
+|                                                                                |
+--------------------------------------------------------------------------------
 ```
 
 
