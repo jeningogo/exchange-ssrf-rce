@@ -114,7 +114,7 @@ def get_ComputerName():
     # nmap MAIL  -p 443 --script http-ntlm-info --script-args http-ntlm-info.root=/rpc/rpcproxy.dll
     r = requests.get('https://%s/rpc/' % target, headers=headers, verify=False, proxies=proxies)
     auth_header = r.headers['WWW-Authenticate']
-    if auth_header == "NTLM":
+    if "NTLM" in auth_header:
         print("[-] Got domain and computer failure !")
         exit()
     else:
