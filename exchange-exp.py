@@ -151,7 +151,7 @@ def get_sid(mail):
         exit()
 
     if "<ErrorCode>500</ErrorCode>" in ssrf_xml.text:
-        print("[-]  Invalid E-Mail-Adresse ! or E-Mail-Adresse : email@domain ")
+        print("[-]  Invalid E-Mail-Adresse ! or E-Mail-Adresse : email@domain \n")
         exit()
     elif "<LegacyDN>" not in str(ssrf_xml.content):
         print("[-] Can not get LegacyDN!")
